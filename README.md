@@ -25,3 +25,6 @@
 > 1. CommandAPI - `MIT License`
 >    * https://github.com/JorelAli/CommandAPI
 >    * https://github.com/JorelAli/CommandAPI/blob/master/LICENSE
+> 2. server-script - `MIT License`
+>    * https://github.com/monun/server-script
+>    * https://github.com/monun/server-script/blob/master/LICENSE
