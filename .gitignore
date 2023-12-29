@@ -11,7 +11,7 @@ build/
 ignore/
 
 ### Local Library ###
-libs/
+#libs/
 
 ### Debug ###
 .debug/
