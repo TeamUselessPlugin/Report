@@ -477,9 +477,13 @@ class Report : Listener {
                     // TODO : 신고 확인 명령어 추가
                     val tmp : Component
                     if (it.contains("%reports-check-command%")) {
-                        tmp = Component.text(it.replace("%reports-check-command%", "§e/something"))
-                            .clickEvent(ClickEvent.runCommand("/something"))
-                            .hoverEvent(Component.text("${msg.getString("notice_unread_reports_hover")}"))
+                        it.split("%reports-check-command%").let { strings ->
+                            tmp = Component.text(strings[0])
+                                .append(Component.text("§e/something")
+                                    .clickEvent(ClickEvent.runCommand("/something"))
+                                    .hoverEvent(Component.text("${msg.getString("notice_unread_reports_hover")}")))
+                                .append(Component.text(strings[1]))
+                        }
                     } else {
                         tmp = Component.text(it.replace("%reportCount%", "$reportCount"))
                     }
