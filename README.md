@@ -1,10 +1,10 @@
-# PurpurMC Plugin Template
+# Report
 
 ---
-> PurpurMC Sample Plugin (1.20.4 ~)
+> Report (1.20.4 ~)
 ---
 
-    PurpurMC Plugin Template
+    Report
     Copyright (C) 2024 TeamUselessPlugin
 
     This program is free software: you can redistribute it and/or modify

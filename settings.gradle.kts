@@ -1,1 +1,1 @@
-rootProject.name = "PurpurMC-Plugin-Template"
+rootProject.name = "Report"
