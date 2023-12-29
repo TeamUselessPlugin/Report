@@ -1,4 +1,4 @@
-package live.kill00.sample
+package io.github.team-uselessplugin.sample
 
 import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIBukkitConfig
