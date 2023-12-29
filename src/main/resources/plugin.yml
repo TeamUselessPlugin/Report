@@ -2,5 +2,5 @@ name: $name
 version: $version
 main: $main
 api-version: $targetMC
-authors: [ Kill00 ]
-website: https://github.com/Kill00/PurpurMC-Plugin-Template
+authors: [ Team-UselessPlugin ]
+website: https://github.com/Team-UselessPlugin/PurpurMC-Plugin-Template
