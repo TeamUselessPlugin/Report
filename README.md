@@ -28,3 +28,6 @@
 > 2. server-script - `MIT License`
 >    * https://github.com/monun/server-script
 >    * https://github.com/monun/server-script/blob/master/LICENSE
+> 3. Heartbeat-Coroutines - `GPL-3.0 License`
+>    * https://github.com/monun/heartbeat-coroutines
+>    * https://github.com/monun/heartbeat-coroutines/blob/master/LICENSE.md

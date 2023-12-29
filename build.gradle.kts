@@ -24,6 +24,7 @@ dependencies {
 //    compileOnly(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar")))) // Load all jars in libs folder (Local Libraries)
 
     implementation("dev.jorel", "commandapi-bukkit-shade", "9.3.0") // CommandAPI Shade
+    implementation("io.github.monun:heartbeat-coroutines:0.0.5") // Heartbeat Coroutines
 }
 
 tasks {
@@ -46,14 +47,19 @@ tasks {
 
         doLast {
             copy {
+                val archiveFileName = "${project.name}-dev.jar"
+
                 from(archiveFile)
-                val newPluginFileLocation = File(rootDir, ".dev/plugins")
-                if (File(newPluginFileLocation, archiveFileName.get()).exists()) into(
-                    File(
-                        newPluginFileLocation,
-                        "update"
-                    )
-                ) else into(newPluginFileLocation)
+                rename { archiveFileName }
+
+                val newPluginFileLocation = File("\\\\192.168.123.107\\Users\\User\\Desktop\\DEV\\plugins") // DevServer
+
+                if (File(newPluginFileLocation, archiveFileName).exists()) {
+                    into(File(newPluginFileLocation, "update"))
+                    File(newPluginFileLocation, "update/RELOAD").delete()
+                } else {
+                    into(newPluginFileLocation)
+                }
             }
         }
     }

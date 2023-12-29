@@ -3,4 +3,21 @@ version: $version
 main: $main
 api-version: $targetMC
 authors: [ Team-UselessPlugin ]
-website: https://github.com/Team-UselessPlugin/PurpurMC-Plugin-Template
+website: https://github.com/Team-UselessPlugin/Report
+
+permissions:
+  report.use:
+    description: can use /report command
+    default: true
+  report.debug:
+    description: can use /report-debug command
+    default: op
+  report.reset:
+    description: can use /report-reset command
+    default: op
+  report.notice:
+    description: notice when accepted player report
+    default: op
+  report.bypass:
+    description: can bypass report
+    default: op
