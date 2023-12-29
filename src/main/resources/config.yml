@@ -1,0 +1,24 @@
+prefix: "§c[!]"
+
+# 신고 기능을 활성화 하기 위한 최소 플레이어 수 (기본값: 2)
+minimumPlayers: 2
+
+# 신고가 승인 되기 위해 동의한 최소 플레이어 수 비율 (기본값: 0.5)
+minimumAcceptPlayersRatio: 0.5
+
+# 동시 신고 수 (기본값: 5)
+maxReportCount: 5
+
+# 처벌 레벨 (기본값: 1)
+# 0: report.notice 권한을 가진 플레이어들에게 알림
+# 1: 추방
+# 2: 밴 (LiteBan 사용시)
+punishmentLevel: 1
+
+# LiteBan (https://www.spigotmc.org/resources/litebans.3715/) #TODO
+LiteBan:
+  # LiteBan 사용 여부 (기본값: false)
+  enabled: false
+
+# 신고가 승인되기 위한 최소 동의 시간[분] (기본값: 5)
+reportAgreementTime: 5

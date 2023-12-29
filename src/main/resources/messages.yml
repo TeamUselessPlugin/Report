@@ -1,0 +1,63 @@
+report_confirm: ["신고를 하기 전에 동의를 해주세요.",
+                 "동의하시려면 명령어를 §e한 번더§f 입력해주세요."]
+report_confirm_success: ["--------------------------",
+                         "신고가 접수되었습니다.",
+                         "사유 : §e%reason%",
+                         "신고 투표는 §e%reportAgreementTime%분§f동안 진행되며 신고 투표중에 나갈경우 신고가 취소됩니다.",
+                         "신고를 취소하시려면 §e'%report-cancel-command%§e'§f를 입력해주세요.",
+                         "--------------------------"]
+report_confirm_success_broadcast: ["--------------------------",
+                                   "§e'%reporter%'§f님이 §e'%reportee%'§f님을 신고하셨습니다.",
+                                   "신고 사유: §e%reason%",
+                                   "신고 내용이 합당하다고 판단하시면 §e'%report-accept-command%§e'§f를 입력해주세요.",
+                                   "--------------------------"]
+report_vote_success_broadcast: "§e'%reporter%'§f님의 신고가 투표자 수를 채워 승인되었습니다."
+report_fail_timeout_broadcast: "§e'%reporter%'§f님이 §e'%reportee%'§f님을 신고 후 §e%reportAgreementTime%분§f 동안 투표자 수를 채우지 못하여 신고가 취소되었습니다."
+report_fail_bypass: "해당 플레이어는 신고할 수 없습니다."
+report_fail_max_report_count: "신고자가 너무 많습니다. 나중에 다시 시도해주세요."
+report_fail_self: "자기 자신을 신고할 수 없습니다."
+report_fail_low_players: "신고를 하기 위해서는 최소 §e%minimumPlayers%명§f 이상의 플레이어가 접속해 있어야 합니다."
+report_fail_already_reporting: "당신은 이미 신고를 진행 하고 있습니다."
+report_fail_cooldown: "당신은 아직 신고를 할 수 없습니다. §e%time%§f 후에 다시 시도해주세요."
+
+report_cancel_hover: "클릭하여 신고를 취소합니다."
+report_cancel_success: "신고가 취소되었습니다."
+report_cancel_success_broadcast: "§e'%reporter%'§f님이 §e'%reportee%'§f님에 대한 신고를 취소하셨습니다."
+report_cancel_fail_not_reporting: "당신은 신고를 진행하고 있지 않습니다."
+report_cancel_offline: "§e'%reporter%'§f님이 로그아웃 하여 §e'%reportee%'§f님에 대한 신고가 취소되었습니다."
+
+report_accept_hover: "클릭하여 %reporter%님의 신고를 동의합니다."
+report_accept_success: "§e'%reporter%'§f님의 신고를 동의하셨습니다."
+report_accept_fail_not_reporting: "신고를 진행중이지 않은 플레이어입니다."
+report_accept_fail_self: "자기 자신에 대한 신고는 승인할 수 없습니다."
+report_accept_fail_already_accepted: "이미 동의한 신고입니다."
+
+report_check_info: ["현재 신고를 진행중인 플레이어: §e%reporterCount%명", "신고를 진행중인 플레이어 목록: %reporters%"]
+report_check_info_player_hover: "클릭하여 %reporter%님의 신고 정보를 확인합니다."
+report_check_player: ["--------------------------",
+                      "§e'%reporter%'§f님이 §e'%reportee%'§f님을 신고하셨습니다.",
+                      "신고 사유: §e%reason%",
+                      "신고 동의자 수: §e%nowAcceptedPlayer%/%maxAcceptedPlayer%명 %acceptButton%",
+                      "남은 시간: %time%",
+                      "--------------------------"]
+report_check_player_accept_button: "§c[동의]"
+report_check_player_accept_hover: "클릭하여 %reporter%님의 신고를 승인합니다."
+report_check_fail_not_reporting: "해당 플레이어는 신고를 진행하고 있지 않습니다."
+
+kick_message: ["§e'%reporter%'§f님의 신고가 승인되어 킥되었습니다.\n",
+               "사유 : §c%reason%\n",
+               "자세한 사항은 관리자에게 문의해주세요."]
+ban_message: ["§e'%reporter%'§f님의 신고가 승인되어 밴되었습니다.\n",
+              "사유 : §c%reason%\n",
+              "자세한 사항은 관리자에게 문의해주세요."]
+error_wrong_punishment_level: "처벌 레벨이 잘못 설정되었습니다. | 설정된 값: §e%punishmentLevel% | 자세한 사항은 관리자에게 문의해주세요."
+
+NonReason: "없음"
+minute: "분"
+second: "초"
+
+notice_unread_reports: ["--------------------------",
+                        "아직 확인하지 않은 승인된 신고가 %reportCount%개 있습니다.",
+                        "§e'%reports-check-command%§e'§f 명령어를 통해 확인해주세요.",
+                        "--------------------------"]
+notice_unread_reports_hover: "클릭하여 확인하지 않은 승인된 신고를 확인합니다."

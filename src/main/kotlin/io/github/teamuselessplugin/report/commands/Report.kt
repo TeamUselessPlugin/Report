@@ -1,9 +1,11 @@
 package io.github.teamuselessplugin.report.commands
 
 import dev.jorel.commandapi.CommandAPICommand
+import dev.jorel.commandapi.arguments.BooleanArgument
 import dev.jorel.commandapi.arguments.GreedyStringArgument
 import dev.jorel.commandapi.arguments.PlayerArgument
 import dev.jorel.commandapi.executors.PlayerCommandExecutor
+import io.github.kill00.configapi.cfg
 import io.github.monun.heartbeat.coroutines.HeartbeatScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -11,13 +13,17 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerJoinEvent
 import java.util.EventListener
 import java.util.UUID
 
-class Report : EventListener {
+class Report : Listener {
     private var commandCooldown: HashMap<UUID, Long>? = HashMap()
     private var reportConfirm: HashMap<UUID, Boolean>? = HashMap()
     private var lastCommand: HashMap<UUID, String>? = HashMap()
+    private var lastReporter: UUID? = null
 
     // 모두 종료후 해당 플레이어를 제거해야함
     private var reporting: HashMap<UUID, Boolean>? = HashMap()
@@ -26,14 +32,14 @@ class Report : EventListener {
     private var acceptedReport: HashMap<UUID, HashMap<UUID, Boolean>>? = HashMap()
     private var elapsedTime: HashMap<UUID, Long>? = HashMap()
 
-    private var lastReporter: UUID? = null
+    private val msg = cfg.get("messages.yml")
+    private val config = cfg.get("config.yml")
 
-//    private val anonymous = false
-    private val minimumPlayers = 2
-    private val minimumAcceptPlayersRatio = 0.5
-    private val maxReportCount = 5
-    private val punishmentLevel = 1 // 0: report.notice 펄미션이 있는 플레이어들에게 알림 1: 킥 2: 밴
-    private val reportAgreementTime = 1000L * 60 * 5
+    private val minimumPlayers = config.getInt("minimumPlayers")
+    private val minimumAcceptPlayersRatio = config.getDouble("minimumAcceptPlayersRatio")
+    private val maxReportCount = config.getInt("maxReportCount")
+    private val punishmentLevel = config.getInt("punishmentLevel")
+    private val reportAgreementTime = 1000L * 60 * config.getInt("reportAgreementTime")
     private val tenMinutes = 1000L * 60 * 10
     fun register() {
         CommandAPICommand("report")
@@ -47,6 +53,9 @@ class Report : EventListener {
                 val userReportConfirm = reportConfirm?.get(sender.uniqueId) ?: false
                 val userLastCommand = lastCommand?.get(sender.uniqueId) ?: ""
                 val userReporting = reporting?.get(sender.uniqueId) ?: false
+
+                val min = msg.getString("minute")
+                val sec = msg.getString("second")
 
                 lastCommand!![sender.uniqueId] = "/report ${args[0]}"
 
@@ -63,8 +72,9 @@ class Report : EventListener {
 
                     // 플레이어가 동의를 하지 않았을 경우 동의를 받음
                     if (!userReportConfirm) {
-                        sender.sendMessage("§c[!] §f신고를 하기 전에 동의를 해주세요.")
-                        sender.sendMessage("§c[!] §f동의하시려면 명령어를 §e한 번더§f 입력해주세요.")
+                        msg.getStringList("report_confirm").forEach {
+                            sendMessageWithPrefix(sender, it)
+                        }
                         reportConfirm!![sender.uniqueId] = true
 
                     } else if (userLastCommand == "/report ${args[0]}") {
@@ -72,25 +82,31 @@ class Report : EventListener {
                         commandCooldown!![sender.uniqueId] = System.currentTimeMillis() + tenMinutes
                         lastReporter = sender.uniqueId
 
-                        sender.sendMessage("§c[!] §f--------------------------")
-                        sender.sendMessage("§c[!] §f신고가 접수되었습니다. | 서버 처벌 레벨: §e${punishmentLevel}")
-                        sender.sendMessage("§c[!] §f사유 : §e${args[1] ?: "없음"}")
-                        sender.sendMessage("§c[!] §f신고 투표는 §e${reportAgreementTime / 1000L / 60}분§f동안 진행되며 신고 투표중에 나갈경우 신고가 취소됩니다.")
-                        sender.sendMessage(
-                            Component.text("§c[!] §f신고를 취소하시려면 ")
-                                .append(
-                                    Component.text("§e'/report-cancel'")
+                        msg.getStringList("report_confirm_success").forEach { string ->
+                            val tmp : Component
+
+                            if (string.contains("%report-cancel-command%")) {
+                                val s = string.split("%report-cancel-command%")
+                                tmp = Component.text(s[0])
+                                    .append(Component.text("§e/report-cancel")
                                         .clickEvent(ClickEvent.runCommand("/report-cancel"))
-                                        .hoverEvent(Component.text("클릭하여 신고를 취소합니다."))
-                                )
-                                .append(Component.text("§f를 입력해주세요."))
-                        )
-                        sender.sendMessage("§c[!] §f--------------------------")
+                                        .hoverEvent(Component.text("${msg.getString("report_cancel_hover")
+                                            ?.replace("%reporter%", sender.name)}")))
+                                    .append(Component.text(s[1]))
+                            } else {
+                                tmp = Component.text(string
+                                    .replace("%punishmentLevel%", "$punishmentLevel")
+                                    .replace("%reportAgreementTime%", "${reportAgreementTime / 1000L / 60}")
+                                    .replace("%reason%", "${args[1] ?: "${msg.getString("NonReason")}"}"))
+                            }
+
+                            sendMessageWithPrefix(sender, tmp)
+                        }
 
                         // 변수 세팅
                         reporting!![sender.uniqueId] = true
                         reportedPlayer!![sender.uniqueId] = rPlayer.uniqueId
-                        reportedReason!![sender.uniqueId] = (args[1] ?: "없음").toString()
+                        reportedReason!![sender.uniqueId] = (args[1] ?: "${msg.getString("NonReason")}").toString()
                         // 본인은 자동 동의
                         acceptedReport!![sender.uniqueId] = HashMap()
                         acceptedReport!![sender.uniqueId]!![sender.uniqueId] = true
@@ -99,66 +115,110 @@ class Report : EventListener {
                         Bukkit.getOnlinePlayers().forEach {
                             if (it != sender) {
                                 it.playSound(it.location, "minecraft:block.note_block.pling", 1f, 1f)
-                                it.sendMessage(Component.text("§c[!] §f--------------------------"))
-                                it.sendMessage(Component.text("§c[!] §e'${sender.name}'§f님이 §e'${rPlayer.name}'§f님을 신고하셨습니다."))
-                                it.sendMessage(Component.text("§c[!] §f신고 사유: §e${args[1] ?: "없음"}"))
-                                it.sendMessage(
-                                    Component.text("§c[!] §f신고 내용이 합당하다고 판단하시면 ")
-                                        .append(
-                                            Component.text("§e'/report-accept'")
+                                msg.getStringList("report_confirm_success_broadcast").forEach { string ->
+                                    val tmp : Component
+
+                                    if (string.contains("%report-accept-command%")) {
+                                        val s = string.split("%report-accept-command%")
+                                        tmp = Component.text(s[0])
+                                            .append(Component.text("§e/report-accept ${sender.name}")
                                                 .clickEvent(ClickEvent.runCommand("/report-accept ${sender.name}"))
-                                                .hoverEvent(Component.text("클릭하여 플레이어의 신고를 승인합니다."))
-                                        )
-                                        .append(Component.text("§f를 입력해주세요."))
-                                )
-                                it.sendMessage(Component.text("§c[!] §f--------------------------"))
+                                                .hoverEvent(Component.text("${msg.getString("report_accept_hover")
+                                                    ?.replace("%reporter%", sender.name)}")))
+                                            .append(Component.text(s[1]))
+                                    } else {
+                                        tmp = Component.text(string
+                                            .replace("%reporter%", sender.name)
+                                            .replace("%reportee%", rPlayer.name)
+                                            .replace("%reportAgreementTime%", "${reportAgreementTime / 1000L / 60}")
+                                            .replace("%reason%", "${args[1] ?: "${msg.getString("NonReason")}"}"))
+                                    }
+
+                                    sendMessageWithPrefix(it, tmp)
+                                }
                             }
                         }
 
                         HeartbeatScope().launch {
                             var ticks = 0L
+                            var enabled = true
 
-                            while (true) {
+                            while (enabled) {
                                 delay(50L)
                                 ticks += 50L
                                 elapsedTime!![sender.uniqueId] = ticks
 
+                                val userAcceptedReport = acceptedReport?.get(sender.uniqueId)?.size ?: 0
+                                enabled = reporting?.get(sender.uniqueId) ?: false
+
                                 if (sender.isOnline) {
-                                    if (ticks >= reportAgreementTime && acceptedReport?.get(sender.uniqueId)?.size!! < Math.round(Bukkit.getOnlinePlayers().size * minimumAcceptPlayersRatio)) {
+                                    if (ticks >= reportAgreementTime && userAcceptedReport < Math.round(Bukkit.getOnlinePlayers().size * minimumAcceptPlayersRatio)) {
                                         Bukkit.getOnlinePlayers().forEach {
                                             if (it != sender) {
-                                                it.sendMessage("§c[!] §e'${sender.name}'§f님이 §e'${rPlayer.name}'§f님을 신고 후 §e${reportAgreementTime / 1000L / 60}분§f 동안 투표자 수를 채우지 못하여 신고가 취소되었습니다.")
+                                                sendMessageWithPrefix(it, "${msg.getString("report_fail_timeout_broadcast")
+                                                    ?.replace("%reporter%", sender.name)
+                                                    ?.replace("%reportee%", rPlayer.name)
+                                                    ?.replace("%reportAgreementTime%", "${reportAgreementTime / 1000L / 60}${min}")}")
                                             }
                                         }
                                         resetValue(sender)
 
                                         break
-                                    } else if (acceptedReport?.get(sender.uniqueId)?.size!! >= Math.round(Bukkit.getOnlinePlayers().size * minimumAcceptPlayersRatio)) {
+                                    } else if (userAcceptedReport >= Math.round(Bukkit.getOnlinePlayers().size * minimumAcceptPlayersRatio)) {
                                         Bukkit.getOnlinePlayers().forEach {
-                                            it.sendMessage("§c[!] §e'${sender.name}'§f님의 신고가 투표자 수를 채워 승인되었습니다.")
+                                            sendMessageWithPrefix(it, "${msg.getString("report_vote_success_broadcast")
+                                                ?.replace("%reporter%", sender.name)}")
                                             resetValue(sender)
+                                        }
 
-                                            when (punishmentLevel) {
-                                                0 -> {
-                                                    // TODO: report.notice 펄미션을 가진 플레이어들에게 알림
+                                        when (punishmentLevel) {
+                                            0 -> {
+                                                val lastID = cfg.get("reports.yml").getInt("reports.${rPlayer.uniqueId}.lastID")
+                                                val aliveID = cfg.get("reports.yml").getIntegerList("reports.${rPlayer.uniqueId}.aliveID")
+
+                                                cfg.get("reports.yml").set("reports.${rPlayer.uniqueId}.lastID", lastID + 1).also { cfg.save("reports.yml", false) }
+
+                                                cfg.get("reports.yml").set("reports.${rPlayer.uniqueId}.aliveID", aliveID.apply {
+                                                    this.add(lastID + 1)
+                                                }).also { cfg.save("reports.yml", false) }
+
+                                                cfg.get("reports.yml").set("reports.${rPlayer.uniqueId}.data.${lastID + 1}",
+                                                    HashMap<String, String>().apply {
+                                                    this["reporter"] = sender.uniqueId.toString()
+                                                    this["reason"] = "${args[1] ?: "${msg.getString("NonReason")}"}"
+                                                    this["time"] = "${System.currentTimeMillis()}"
+//                                                    this["checked"] = false.toString()
+                                                }).also { cfg.save("reports.yml", false) }
+                                            }
+
+                                            1 -> {
+                                                val tmp: Component = Component.empty()
+                                                msg.getStringList("kick_message").forEach { string ->
+                                                    tmp.append(Component.text(string
+                                                        .replace("%reporter%", sender.name)
+                                                        .replace("%reportee%", rPlayer.name)
+                                                        .replace("%reason%", "${args[1] ?: "${msg.getString("NonReason")}"}")))
+                                                    rPlayer.kick(tmp)
                                                 }
+                                            }
 
-                                                1 -> {
-                                                    rPlayer.kick(
-                                                        Component.text(
-                                                            "§c[!] §f${sender.name}님의 신고가 승인되어 킥되었습니다.\n" +
-                                                                    "신고 사유: ${args[1] ?: "없음"}\n\n" +
-                                                                    "자세한 사항은 관리자에게 문의해주세요."
-                                                        )
-                                                    )
-                                                }
+                                            // TODO: LiteBan
+//                                            2 -> {
+//                                                val tmp: Component = Component.empty()
+//                                                msg.getStringList("ban_message").forEach { string ->
+//                                                    tmp.append(Component.text(string
+//                                                        .replace("%reporter%", sender.name)
+//                                                        .replace("%reportee%", rPlayer.name)
+//                                                        .replace("%reason%", "${args[1] ?: "${msg.getString("NonReason")}"}")))
+//                                                    rPlayer.banPlayer()
+//                                                }
+                                            else -> {
+                                                Bukkit.getLogger().warning("${msg.getString("error_wrong_punishment_level")
+                                                    ?.replace("%punishmentLevel%", "$punishmentLevel")}")
 
-                                                2 -> {
-                                                    rPlayer.banPlayer(
-                                                        "§c[!] §f${sender.name}님의 신고가 승인되어 밴되었습니다.\n" +
-                                                                "신고 사유: ${args[1] ?: "없음"}\n\n" +
-                                                                "자세한 사항은 관리자에게 문의해주세요."
-                                                    )
+                                                Bukkit.getOnlinePlayers().forEach {
+                                                    sendMessageWithPrefix(it, "${msg.getString("error_wrong_punishment_level")
+                                                        ?.replace("%punishmentLevel%", "$punishmentLevel")}")
                                                 }
                                             }
                                         }
@@ -168,7 +228,9 @@ class Report : EventListener {
                                 } else {
                                     resetValue(sender)
                                     Bukkit.getOnlinePlayers().forEach {
-                                        it.sendMessage("§c[!] §e'${sender.name}'§f님이 로그아웃 하여 ${rPlayer.name}님에 대한 신고가 취소되었습니다.")
+                                        sendMessageWithPrefix(it, "${msg.getString("report_fail_offline")
+                                            ?.replace("%reporter%", sender.name)
+                                            ?.replace("%reportee%", rPlayer.name)}")
                                     }
 
                                     break
@@ -178,28 +240,35 @@ class Report : EventListener {
                     }
 
                 } else if (rPlayer.hasPermission("report.bypass")) {
-                    sender.sendMessage("§c[!] §f해당 플레이어는 신고할 수 없습니다.")
+                    // bypass 권한을 가진 플레이어는 신고를 할 수 없음
+                    sendMessageWithPrefix(sender, "${msg.getString("report_fail_bypass")}")
 
                 } else if (reportedPlayer?.size!! > maxReportCount) {
-                    sender.sendMessage("§c[!] §f신고자가 너무 많습니다. 신고를 진행할 수 없습니다.")
+                    // 동시에 신고할 수 있는 최대 횟수를 초과했을 경우
+                    sendMessageWithPrefix(sender, "${msg.getString("report_fail_max_report_count")}")
 
                 } else if (args[0] == sender) {
-                    sender.sendMessage("§c[!] §f자기 자신을 신고할 수 없습니다.")
+                    // 본인을 신고할 수 없음
+                    sendMessageWithPrefix(sender, "${msg.getString("report_fail_self")}")
 
                 } else if (Bukkit.getOnlinePlayers().size < minimumPlayers) {
-                    sender.sendMessage("§c[!] §f신고를 하기 위해서는 최소 §e${minimumPlayers}명§f 이상의 플레이어가 접속해 있어야 합니다.")
+                    // 최소 플레이어 수를 충족하지 못했을 경우
+                    sendMessageWithPrefix(sender, "${msg.getString("report_fail_low_players")
+                        ?.replace("%minimumPlayers%", "$minimumPlayers")}")
 
                 } else if (userReporting) {
-                    sender.sendMessage("§c[!] §f당신은 이미 신고를 진행 하고 있습니다.")
+                    // 이미 신고를 진행중일 경우
+                    sendMessageWithPrefix(sender, "${msg.getString("report_fail_already_reporting")}")
 
                 } else if (userCooldown > System.currentTimeMillis()) {
+                    // 신고 쿨타임이 적용중일 경우
                     val time = (userCooldown - System.currentTimeMillis()) / 1000L
-                    val text = "§c[!] §f당신은 아직 신고를 할 수 없습니다. §e**ReWrite**§f 후에 다시 시도해주세요."
+                    val text = msg.getString("report_fail_cooldown")!!
 
                     if (time > 60) {
-                        sender.sendMessage(text.replace("**ReWrite**", "${time / 60}분 ${time % 60}초"))
+                        sendMessageWithPrefix(sender, text.replace("%time%", "${time / 60}${min} ${time % 60}${sec}"))
                     } else {
-                        sender.sendMessage(text.replace("**ReWrite**", "${time}초"))
+                        sendMessageWithPrefix(sender, text.replace("%time%", "${time}${sec}"))
                     }
                 }
 
@@ -215,20 +284,25 @@ class Report : EventListener {
             .withArguments(PlayerArgument("player"))
             .executesPlayer(PlayerCommandExecutor { sender, args ->
                 val reportPlayer = args[0] as? Player
-                val reportedPlayer = Bukkit.getPlayer(reportedPlayer?.get(reportPlayer?.uniqueId) as UUID)
+                val reportPlayerUUID = reportedPlayer?.get(reportPlayer?.uniqueId)
+                val reportedPlayer =  if (reportPlayerUUID != null) Bukkit.getPlayer(reportPlayerUUID) else null
                 val userReporting = reporting?.get(reportPlayer?.uniqueId) ?: false
                 val userAcceptedReport = acceptedReport?.get(reportPlayer?.uniqueId)?.get(sender.uniqueId) ?: false
 
-                if (userReporting && reportedPlayer != sender && !userAcceptedReport) {
+                if (userReporting && reportedPlayer != null && reportedPlayer != sender && !userAcceptedReport) {
                     acceptedReport!![reportPlayer?.uniqueId]!![sender.uniqueId] = true
                     sender.playSound(sender.location, "minecraft:block.note_block.pling", 1f, 1f)
-                    sender.sendMessage("§c[!] §f${reportPlayer?.name}님의 신고를 승인하셨습니다.")
-                } else if (!userReporting) {
-                    sender.sendMessage("§c[!] §f신고를 진행중이지 않은 플레이어입니다.")
+                    sendMessageWithPrefix(sender, "${msg.getString("report_accept_success")
+                        ?.replace("%reporter%", "${reportPlayer?.name}")}")
+                } else if (!userReporting || reportedPlayer == null) {
+                    // 신고를 진행중이지 않을 경우
+                    sendMessageWithPrefix(sender, "${msg.getString("report_accept_fail_not_reporting")}")
                 } else if (reportedPlayer == sender) {
-                    sender.sendMessage("§c[!] §f자기 자신에 대한 신고를 승인할 수 없습니다.")
+                    // 본인의 피신고자인 경우 신고를 동의 할 수 없음
+                    sendMessageWithPrefix(sender, "${msg.getString("report_accept_fail_self")}")
                 } else {
-                    sender.sendMessage("§c[!] §f이미 신고를 승인하셨습니다.")
+                    // 이미 동의를 했을 경우
+                    sendMessageWithPrefix(sender, "${msg.getString("report_accept_fail_already_accepted")}")
                 }
             }).register()
 
@@ -244,17 +318,19 @@ class Report : EventListener {
                 if (userReporting) {
                     reporting?.remove(sender.uniqueId)
                     sender.playSound(sender.location, "minecraft:entity.player.levelup", 1f, 1f)
-                    sender.sendMessage("§c[!] §f신고가 취소되었습니다.")
-
+                    sendMessageWithPrefix(sender, "${msg.getString("report_cancel_success")}")
                     resetValue(sender)
 
                     Bukkit.getOnlinePlayers().forEach {
                         if (it == sender) {
-                            it.sendMessage(Component.text("§c[!] §e'${reporter}'§f님이 §e'${Bukkit.getPlayer(reportedPlayer as UUID)?.name}'§f님에 대한 신고를 취소하셨습니다."))
+                            sendMessageWithPrefix(it, "${msg.getString("report_cancel_success_broadcast")
+                                ?.replace("%reporter%", reporter)
+                                ?.replace("%reportee%", Bukkit.getPlayer(reportedPlayer as UUID)?.name ?: "null")}")
                         }
                     }
                 } else {
-                    sender.sendMessage("§c[!] §f당신은 신고를 진행하고 있지 않습니다.")
+                    // 신고를 진행중이지 않을 경우
+                    sendMessageWithPrefix(sender, "${msg.getString("report_cancel_fail_not_reporting")}")
                 }
             }).register()
 
@@ -264,41 +340,64 @@ class Report : EventListener {
             .withArguments(PlayerArgument("player").setOptional(true))
             .executesPlayer(PlayerCommandExecutor { sender, args ->
                 if (args[0] == null) {
-                    sender.sendMessage("§c[!] §f현재 신고를 진행중인 플레이어: §e${reporting?.size ?: 0}명")
+                    val usersText = msg.getStringList("report_check_info")
+                    sendMessageWithPrefix(sender, usersText[0]
+                        ?.replace("%reporterCount%", "${reporting?.size ?: 0}")!!)
 
-                    var usersText = Component.text("§c[!] §f신고를 진행중인 플레이어 목록: ")
+                    val userTextS = usersText[1]?.split("%reporters%") ?: listOf("")
+                    var usersTextComponent = Component.text(userTextS[0])
+
                     reporting?.let {
                         var i = 0
                         it.forEach { (uuid, _) ->
                             i++
                             val playerName = Bukkit.getPlayer(uuid)?.name
-                            val tmp = Component.text("$playerName").clickEvent(ClickEvent.runCommand("/report-check $playerName")).hoverEvent(Component.text("클릭하여 ${playerName}님의 신고 정보를 확인합니다."))
-                            usersText = usersText.append(tmp)
-
+                            val tmp = Component.text("$playerName")
+                                .clickEvent(ClickEvent.runCommand("/report-check $playerName"))
+                                .hoverEvent(Component.text("${msg.getString("report_check_info_player_hover")
+                                    ?.replace("%reporter%", sender.name)}"))
+                            usersTextComponent = usersTextComponent.append(tmp)
                             if (it.size != i) {
-                                usersText = usersText.append(Component.text(", "))
+                                usersTextComponent = usersTextComponent.append(Component.text(", "))
                             }
                         }
                     }
 
-                    sender.sendMessage(usersText)
+                    usersTextComponent.append(Component.text(userTextS[1]))
+                    sendMessageWithPrefix(sender, usersTextComponent)
                 } else {
+                    // 신고 확인
                     val reportPlayer = args[0] as? Player
                     val reportedPlayerUUID = reportedPlayer?.get(reportPlayer?.uniqueId) ?: ""
                     val userReporting = reporting?.get(reportPlayer?.uniqueId) ?: false
-                    val reportedReason = reportedReason?.get(reportPlayer?.uniqueId) ?: "없음"
+                    val reportedReason = reportedReason?.get(reportPlayer?.uniqueId) ?: "${msg.getString("NonReason")}"
                     val elapsedTime = elapsedTime?.get(reportPlayer?.uniqueId) ?: 0L
 
                     if (userReporting) {
-                        sender.sendMessage("§c[!] §f--------------------------")
-                        sender.sendMessage("§c[!] §e'${reportPlayer?.name}'§f님이 §e'${Bukkit.getPlayer(reportedPlayerUUID as UUID)?.name}'§f님을 신고하셨습니다.")
-                        sender.sendMessage("§c[!] §f신고 사유: §e${reportedReason}")
-                        sender.sendMessage(
-                            Component.text("§c[!] §f신고 동의자 수: §e${acceptedReport?.get(reportPlayer?.uniqueId)?.size ?: 0}/${Math.round(Bukkit.getOnlinePlayers().size * minimumAcceptPlayersRatio)}명 ").append(Component.text("§c[동의]").clickEvent(ClickEvent.runCommand("/report-accept ${reportPlayer?.name}")).hoverEvent(Component.text("클릭하여 ${reportPlayer?.name}님의 신고를 승인합니다."))))
-                        sender.sendMessage("§c[!] §f남은 시간: §e${(reportAgreementTime - elapsedTime) / 1000L / 60}분 ${(reportAgreementTime- elapsedTime) / 1000L % 60}초")
-                        sender.sendMessage("§c[!] §f--------------------------")
+                        msg.getStringList("report_check_player").forEach {
+                            val tmp: Component
+                            if (it.contains("%acceptButton")) {
+                                val s = it.split("%acceptButton%")
+                                tmp = Component.text(s[0]
+                                    .replace("%nowAcceptedPlayer%", "${acceptedReport?.get(reportPlayer?.uniqueId)?.size ?: 0}")
+                                    .replace("%maxAcceptedPlayer%", "${Math.round(Bukkit.getOnlinePlayers().size * minimumAcceptPlayersRatio)}"))
+
+                                    .append(Component.text("${msg.getString("report_check_player_accept_button")}")
+                                        .clickEvent(ClickEvent.runCommand("/report-accept ${reportPlayer?.name}"))
+                                        .hoverEvent(Component.text("${msg.getString("report_check_player_accept_hover")?.replace("%reporter%", sender.name)}")))
+                                    .append(Component.text(s[1]))
+                            } else {
+                                tmp = Component.text(it
+                                    .replace("%reporter%", "${reportPlayer?.name}")
+                                    .replace("%reportee%", Bukkit.getPlayer(reportedPlayerUUID as UUID)?.name ?: "null")
+                                    .replace("%reason%", reportedReason)
+                                    .replace("%time%", "${(reportAgreementTime - elapsedTime) / 1000L / 60}${msg.getString("minute")} ${(reportAgreementTime- elapsedTime) / 1000L % 60}${msg.getString("second")}"))
+                            }
+                            sendMessageWithPrefix(sender, tmp)
+                        }
                     } else {
-                        sender.sendMessage("§c[!] §f신고를 진행중이지 않은 플레이어입니다.")
+                        // 신고를 진행중이지 않을 경우
+                        sendMessageWithPrefix(sender, "${msg.getString("report_check_fail_not_reporting")}")
                     }
                 }
             }).register()
@@ -336,8 +435,9 @@ class Report : EventListener {
 
         // 신고 시스템 초기화
         CommandAPICommand("report-reset")
+            .withArguments(BooleanArgument("RESET-reports.yml-FILE").setOptional(true))
             .withPermission("report.reset")
-            .executesPlayer(PlayerCommandExecutor { sender, _ ->
+            .executesPlayer(PlayerCommandExecutor { sender, args ->
                 commandCooldown?.clear()
                 reportConfirm?.clear()
                 lastCommand?.clear()
@@ -348,8 +448,46 @@ class Report : EventListener {
 
                 lastReporter = null
 
+                if (args[0] == true) {
+                    cfg.save("reports.yml", true)
+                }
+
                 sender.sendMessage("§c[!] §f신고 시스템이 초기화되었습니다.")
             }).register()
+    }
+
+    @EventHandler
+    fun onPlayerJoin(e: PlayerJoinEvent) {
+        val player = e.player
+
+        if (player.hasPermission("report.notice")) {
+            val reports = cfg.get("reports.yml")
+            var reportCount = 0
+
+            reports.getConfigurationSection("reports")?.getKeys(false)?.forEach {reporteeUUID ->
+                reports.getIntegerList("reports.${reporteeUUID}.aliveID").forEach { id ->
+                    if (!reports.getStringList("reports.${reporteeUUID}.data.${id}.checked").contains(player.uniqueId.toString())) {
+                        reportCount++
+                    }
+                }
+            }
+
+            if (reportCount != 0) {
+                msg.getStringList("notice_unread_reports").forEach {
+                    // TODO : 신고 확인 명령어 추가
+                    val tmp : Component
+                    if (it.contains("%reports-check-command%")) {
+                        tmp = Component.text(it.replace("%reports-check-command%", "§e/something"))
+                            .clickEvent(ClickEvent.runCommand("/something"))
+                            .hoverEvent(Component.text("${msg.getString("notice_unread_reports_hover")}"))
+                    } else {
+                        tmp = Component.text(it.replace("%reportCount%", "$reportCount"))
+                    }
+
+                    sendMessageWithPrefix(player, tmp)
+                }
+            }
+        }
     }
 
     private fun resetValue(player: Player) {
@@ -358,5 +496,12 @@ class Report : EventListener {
         reportedReason?.remove(player.uniqueId)
         acceptedReport?.remove(player.uniqueId)
         elapsedTime?.remove(player.uniqueId)
+    }
+
+    private fun sendMessageWithPrefix(player: Player, message: String) {
+        player.sendMessage("${config.getString("prefix")} §r${message}")
+    }
+    private fun sendMessageWithPrefix(player: Player, message: Component) {
+        player.sendMessage(Component.text("${config.getString("prefix")} §r").append(message))
     }
 }

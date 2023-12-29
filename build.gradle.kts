@@ -21,14 +21,15 @@ repositories {
 dependencies {
     compileOnly("org.purpurmc.purpur", "purpur-api", "${targetMC}-R0.1-SNAPSHOT") // PurpurMC API
     compileOnly("dev.jorel", "commandapi-bukkit-core", "9.3.0") // CommandAPI Dev Only
-//    compileOnly(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar")))) // Load all jars in libs folder (Local Libraries)
-
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar")))) // Load all jars in libs folder (Local Libraries)
     implementation("dev.jorel", "commandapi-bukkit-shade", "9.3.0") // CommandAPI Shade
     implementation("io.github.monun:heartbeat-coroutines:0.0.5") // Heartbeat Coroutines
 }
 
 tasks {
     processResources {
+        filteringCharset = "UTF-8"
+
         filesMatching("**/*.yml") {
             expand(project.properties)
         }
