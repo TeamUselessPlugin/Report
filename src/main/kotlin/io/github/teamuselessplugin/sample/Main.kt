@@ -1,4 +1,4 @@
-package io.github.team-uselessplugin.sample
+package io.github.teamuselessplugin.sample
 
 import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIBukkitConfig
