@@ -1,7 +1,7 @@
 name: $name
 version: $version
 main: $main
-api-version: $targetMC
+api-version: $targetAPI
 authors: [ Team-UselessPlugin ]
 website: https://github.com/Team-UselessPlugin/Report
 
