@@ -4,20 +4,26 @@ import dev.jorel.commandapi.CommandAPICommand
 import dev.jorel.commandapi.arguments.BooleanArgument
 import dev.jorel.commandapi.arguments.GreedyStringArgument
 import dev.jorel.commandapi.arguments.PlayerArgument
+import dev.jorel.commandapi.arguments.StringArgument
 import dev.jorel.commandapi.executors.PlayerCommandExecutor
 import io.github.kill00.configapi.cfg
 import io.github.monun.heartbeat.coroutines.HeartbeatScope
+import io.github.monun.invfx.InvFX.frame
+import io.github.monun.invfx.openFrame
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
-import java.util.EventListener
-import java.util.UUID
+import org.bukkit.inventory.ItemStack
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.util.*
 
 class Report : Listener {
     private var commandCooldown: HashMap<UUID, Long>? = HashMap()
@@ -201,17 +207,27 @@ class Report : Listener {
                                                     rPlayer.kick(tmp)
                                                 }
                                             }
-
-                                            // TODO: LiteBan
-//                                            2 -> {
+                                            2 -> {
 //                                                val tmp: Component = Component.empty()
-//                                                msg.getStringList("ban_message").forEach { string ->
+                                                val tmp = ""
+                                                msg.getStringList("ban_message").forEach { string ->
 //                                                    tmp.append(Component.text(string
 //                                                        .replace("%reporter%", sender.name)
 //                                                        .replace("%reportee%", rPlayer.name)
 //                                                        .replace("%reason%", "${args[1] ?: "${msg.getString("NonReason")}"}")))
-//                                                    rPlayer.banPlayer()
-//                                                }
+
+                                                    tmp.plus(
+                                                        string
+                                                            .replace("%reporter%", sender.name)
+                                                            .replace("%reportee%", rPlayer.name)
+                                                            .replace(
+                                                                "%reason%",
+                                                                "${args[1] ?: "${msg.getString("NonReason")}"}"
+                                                            )
+                                                    )
+                                                    rPlayer.banPlayer(tmp)
+                                                }
+                                            }
                                             else -> {
                                                 Bukkit.getLogger().warning("${msg.getString("error_wrong_punishment_level")
                                                     ?.replace("%punishmentLevel%", "$punishmentLevel")}")
@@ -335,12 +351,12 @@ class Report : Listener {
             }).register()
 
         // 신고 확인
-        CommandAPICommand("report-check")
-            .withAliases("신고확인")
+        CommandAPICommand("report-information")
+            .withAliases("신고정보")
             .withArguments(PlayerArgument("player").setOptional(true))
             .executesPlayer(PlayerCommandExecutor { sender, args ->
                 if (args[0] == null) {
-                    val usersText = msg.getStringList("report_check_info")
+                    val usersText = msg.getStringList("report_information_info")
                     sendMessageWithPrefix(sender, usersText[0]
                         ?.replace("%reporterCount%", "${reporting?.size ?: 0}")!!)
 
@@ -353,8 +369,8 @@ class Report : Listener {
                             i++
                             val playerName = Bukkit.getPlayer(uuid)?.name
                             val tmp = Component.text("$playerName")
-                                .clickEvent(ClickEvent.runCommand("/report-check $playerName"))
-                                .hoverEvent(Component.text("${msg.getString("report_check_info_player_hover")
+                                .clickEvent(ClickEvent.runCommand("/report-information $playerName"))
+                                .hoverEvent(Component.text("${msg.getString("report_information_info_player_hover")
                                     ?.replace("%reporter%", sender.name)}"))
                             usersTextComponent = usersTextComponent.append(tmp)
                             if (it.size != i) {
@@ -374,7 +390,7 @@ class Report : Listener {
                     val elapsedTime = elapsedTime?.get(reportPlayer?.uniqueId) ?: 0L
 
                     if (userReporting) {
-                        msg.getStringList("report_check_player").forEach {
+                        msg.getStringList("report_information_player").forEach {
                             val tmp: Component
                             if (it.contains("%acceptButton")) {
                                 val s = it.split("%acceptButton%")
@@ -382,9 +398,9 @@ class Report : Listener {
                                     .replace("%nowAcceptedPlayer%", "${acceptedReport?.get(reportPlayer?.uniqueId)?.size ?: 0}")
                                     .replace("%maxAcceptedPlayer%", "${Math.round(Bukkit.getOnlinePlayers().size * minimumAcceptPlayersRatio)}"))
 
-                                    .append(Component.text("${msg.getString("report_check_player_accept_button")}")
+                                    .append(Component.text("${msg.getString("report_information_player_accept_button")}")
                                         .clickEvent(ClickEvent.runCommand("/report-accept ${reportPlayer?.name}"))
-                                        .hoverEvent(Component.text("${msg.getString("report_check_player_accept_hover")?.replace("%reporter%", sender.name)}")))
+                                        .hoverEvent(Component.text("${msg.getString("report_information_player_accept_hover")?.replace("%reporter%", sender.name)}")))
                                     .append(Component.text(s[1]))
                             } else {
                                 tmp = Component.text(it
@@ -397,7 +413,132 @@ class Report : Listener {
                         }
                     } else {
                         // 신고를 진행중이지 않을 경우
-                        sendMessageWithPrefix(sender, "${msg.getString("report_check_fail_not_reporting")}")
+                        sendMessageWithPrefix(sender, "${msg.getString("report_information_fail_not_reporting")}")
+                    }
+                }
+            }).register()
+
+        // 신고 알림 확인 TODO: sendMessage 전부 교체
+        CommandAPICommand("report-check")
+            .withArguments(StringArgument("player_uuid").setOptional(true))
+            .withPermission("report.notice")
+            .withAliases("신고기록확인")
+            .executesPlayer(PlayerCommandExecutor { sender, args ->
+                val reports = cfg.get("reports.yml")
+                val reportees = reports.getConfigurationSection("reports")?.getKeys(false) ?: listOf<String>()
+
+                var hasNotReadReporteeCount = 0
+                reportees.forEach { uuid ->
+                    val id = reports.getIntegerList("reports.${uuid}.aliveID").size
+                    var read = 0
+                    reports.getIntegerList("reports.${uuid}.aliveID").forEach {
+                        if (reports.getBoolean("reports.${uuid}.data.${it}.checked.${sender.uniqueId}")) {
+                            read++
+                        }
+                    }
+                    if (id != read) {
+                        hasNotReadReporteeCount++
+                    }
+                }
+
+                if (args[0] == null) {
+                    // 승인된 신고 모두 확인
+                    val reporteeFrame = frame(hasNotReadReporteeCount / 9 + 1, Component.text("피신고자 목록")) {
+                        var x = 0 // (0..8)
+                        var y = 0
+                        reportees.forEach { uuid ->
+                            val allReports = reports.getIntegerList("reports.${uuid}.aliveID").size
+                            var notReadReportCount = 0
+                            reports.getIntegerList("reports.${uuid}.aliveID").forEach { id ->
+                                if (!reports.getBoolean("reports.${uuid}.data.${id}.checked.${sender.uniqueId}")) {
+                                    notReadReportCount++
+                                }
+                            }
+
+                            if (allReports > 0 && notReadReportCount > 0) {
+                                slot(x, y) {
+                                    item = ItemStack(Material.PLAYER_HEAD).apply {
+                                        itemMeta = itemMeta?.apply {
+                                            displayName(Component.text("§f${Bukkit.getOfflinePlayer(UUID.fromString(uuid)).name}"))
+                                            lore(listOf(Component.text(""),
+                                                Component.text("§c전체 ${allReports}개 중 ${notReadReportCount}개의 신고를 읽지 않았습니다."),
+                                            ))
+                                        }
+                                    }
+                                    onClick {
+                                        sender.closeInventory()
+                                        sender.performCommand("report-check $uuid")
+                                    }
+                                }
+
+                                if (x <= 8) {
+                                    x++
+                                } else {
+                                    x = 0
+                                    y++
+                                }
+                            }
+                        }
+                    }
+
+                    sender.openFrame(reporteeFrame)
+                } else {
+                    // 피신고자의 승인된 신고 내역 확인
+                    try {
+                        val player = Bukkit.getOfflinePlayer(UUID.fromString(args[0] as String)!!)
+
+                        val reporteeReportsID = reports.getIntegerList("reports.${player.uniqueId}.aliveID")
+
+                        var notReadReportID: List<Int> = listOf()
+                        reporteeReportsID.forEach { id ->
+                            if (!reports.getBoolean("reports.${player.uniqueId}.data.${id}.checked.${sender.uniqueId}")) {
+                                notReadReportID = notReadReportID.plus(id)
+                            }
+                        }
+
+                        if (notReadReportID.isNotEmpty()) {
+                            val dataFrame = frame(notReadReportID.size / 9 + 1, Component.text("승인된 신고 내역")) {
+                                var x = 0 // (0..8)
+                                var y = 0
+                                notReadReportID.forEach { id ->
+                                    val timeFormat = SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분 ss초")
+                                    val timestamp = Timestamp(reports.getString("reports.${player.uniqueId}.data.${id}.time")?.toLong() ?: 0L)
+                                    slot(x, y) {
+                                        item = ItemStack(Material.PAPER).apply {
+                                            itemMeta = itemMeta?.apply {
+                                                displayName(Component.text("§fID: $id"))
+                                                lore(listOf(Component.text(""),
+                                                    Component.text("§f신고 사유: ${reports.getString("reports.${player.uniqueId}.data.${id}.reason")}"),
+                                                    Component.text("§f신고 시간: ${timeFormat.format(timestamp)}"),
+                                                    Component.text(""),
+                                                    Component.text("§c이 신고 내역을 숨기려면 클릭하세요."),
+                                                ))
+                                            }
+                                        }
+                                        onClick {
+                                            cfg.get("reports.yml").set("reports.${player.uniqueId}.data.${it.currentItem?.displayName?.replace("§fID: ", "")}.checked.${sender.uniqueId}", true)
+                                                .also { cfg.save("reports.yml", false) }
+                                            sender.playSound(sender.location, "minecraft:block.note_block.pling", 1f, 1f)
+                                            sender.sendMessage("신고 내역을 숨겼습니다.")
+                                            sender.performCommand("report-check ${player.uniqueId}")
+                                        }
+                                    }
+
+                                    if (x <= 8) {
+                                        x++
+                                    } else {
+                                        x = 0
+                                        y++
+                                    }
+                                }
+                            }
+                            sender.openFrame(dataFrame)
+                        } else {
+                            sender.closeInventory()
+                            sender.sendMessage("더 이상 읽을 신고내용이 없습니다.")
+                        }
+                    } catch (e: IllegalArgumentException) {
+                        sender.sendMessage("유저 정보를 잘못 입력했거나 찾을 수 없습니다.")
                     }
                 }
             }).register()
@@ -474,13 +615,12 @@ class Report : Listener {
 
             if (reportCount != 0) {
                 msg.getStringList("notice_unread_reports").forEach {
-                    // TODO : 신고 확인 명령어 추가
                     val tmp : Component
                     if (it.contains("%reports-check-command%")) {
                         it.split("%reports-check-command%").let { strings ->
                             tmp = Component.text(strings[0])
-                                .append(Component.text("§e/something")
-                                    .clickEvent(ClickEvent.runCommand("/something"))
+                                .append(Component.text("§e/report-check")
+                                    .clickEvent(ClickEvent.runCommand("/report-check"))
                                     .hoverEvent(Component.text("${msg.getString("notice_unread_reports_hover")}")))
                                 .append(Component.text(strings[1]))
                         }

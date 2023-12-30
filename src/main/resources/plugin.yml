@@ -4,6 +4,13 @@ main: $main
 api-version: $targetAPI
 authors: [ Team-UselessPlugin ]
 website: https://github.com/Team-UselessPlugin/Report
+libraries:
+  - org.jetbrains.kotlin:kotlin-stdlib:1.9.22
+  - org.jetbrains.kotlin:kotlin-reflect:1.9.22
+  - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3
+  - io.github.monun:invfx-core:3.3.2
+  - io.github.monun:heartbeat-coroutines:0.0.5
+  - dev.jorel:commandapi-bukkit-shade:9.3.0
 
 permissions:
   report.use:

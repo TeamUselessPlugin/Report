@@ -19,11 +19,18 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.purpurmc.purpur", "purpur-api", "${targetMC}-R0.1-SNAPSHOT") // PurpurMC API
-    compileOnly("dev.jorel", "commandapi-bukkit-core", "9.3.0") // CommandAPI Dev Only
+    /* Essentials Dependency */
+    compileOnly(kotlin("stdlib")) // Kotlin Standard Library : Apache-2.0 License
+    compileOnly(kotlin("reflect")) // Kotlin Reflection : Apache-2.0 License
+    /* Essentials Dependency */
+
+    compileOnly("org.purpurmc.purpur", "purpur-api", "${targetMC}-R0.1-SNAPSHOT") // PurpurMC API : MIT License
+    compileOnly("dev.jorel", "commandapi-bukkit-core", "9.3.0") // CommandAPI Dev Only : MIT License
+    compileOnly("io.github.monun", "heartbeat-coroutines", "0.0.5") // Heartbeat Coroutines : GPL-3.0 License
+    compileOnly("io.github.monun", "invfx-core", "3.3.2") // InvFX : GPL-3.0 License
+    compileOnly("dev.jorel", "commandapi-bukkit-shade", "9.3.0") // CommandAPI Shade : MIT License
+
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar")))) // Load all jars in libs folder (Local Libraries)
-    implementation("dev.jorel", "commandapi-bukkit-shade", "9.3.0") // CommandAPI Shade
-    implementation("io.github.monun:heartbeat-coroutines:0.0.5") // Heartbeat Coroutines
 }
 
 tasks {
@@ -43,8 +50,9 @@ tasks {
         archiveBaseName.set(project.name)
         archiveVersion.set(version)
         archiveClassifier.set("")
-        configurations = listOf(project.configurations.runtimeClasspath.get())
         from(sourceSets["main"].output, "LICENSE", "README.MD")
+
+        configurations = listOf(project.configurations.runtimeClasspath.get()) // Add all dependencies to the jar
 
         doLast {
             copy {
