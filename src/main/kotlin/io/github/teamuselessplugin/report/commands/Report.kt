@@ -177,25 +177,29 @@ class Report : Listener {
                                         }
                                         resetValue(sender)
 
-                                        when (punishmentLevel) {
-                                            0 -> {
-                                                val lastID = cfg.get("reports.yml").getInt("reports.${rPlayer.uniqueId}.lastID")
-                                                val aliveID = cfg.get("reports.yml").getIntegerList("reports.${rPlayer.uniqueId}.aliveID")
+                                        if (punishmentLevel == 0 || config.getBoolean("noticeWithoutPunishmentLevel")) {
+                                            val lastID = cfg.get("reports.yml").getInt("reports.${rPlayer.uniqueId}.lastID")
+                                            val aliveID = cfg.get("reports.yml").getIntegerList("reports.${rPlayer.uniqueId}.aliveID")
 
-                                                cfg.get("reports.yml").set("reports.${rPlayer.uniqueId}.lastID", lastID + 1).also { cfg.save("reports.yml", false) }
+                                            cfg.get("reports.yml").set("reports.${rPlayer.uniqueId}.lastID", lastID + 1).also { cfg.save("reports.yml", false) }
 
-                                                cfg.get("reports.yml").set("reports.${rPlayer.uniqueId}.aliveID", aliveID.apply {
-                                                    this.add(lastID + 1)
-                                                }).also { cfg.save("reports.yml", false) }
+                                            cfg.get("reports.yml").set("reports.${rPlayer.uniqueId}.aliveID", aliveID.apply {
+                                                this.add(lastID + 1)
+                                            }).also { cfg.save("reports.yml", false) }
 
-                                                cfg.get("reports.yml").set("reports.${rPlayer.uniqueId}.data.${lastID + 1}",
-                                                    HashMap<String, String>().apply {
+                                            cfg.get("reports.yml").set("reports.${rPlayer.uniqueId}.data.${lastID + 1}",
+                                                HashMap<String, String>().apply {
                                                     this["reporter"] = sender.uniqueId.toString()
                                                     this["reason"] = "${args[1] ?: "${msg.getString("NonReason")}"}"
                                                     this["time"] = "${System.currentTimeMillis()}"
 //                                                    this["checked"] = false.toString()
                                                 }).also { cfg.save("reports.yml", false) }
-                                            }
+                                        }
+
+                                        when (punishmentLevel) {
+//                                            0 -> {
+//
+//                                            }
 
                                             1 -> {
                                                 var reason = ""

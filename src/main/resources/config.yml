@@ -15,5 +15,8 @@ maxReportCount: 5
 # 2: 밴
 punishmentLevel: 1
 
+# 처벌 레벨일 때도 report.notice 권한을 가진 플레이어들에게 알림을 보낼지 여부 (기본값: true)
+noticeWithoutPunishmentLevel: true
+
 # 신고가 승인되기 위해 필요한 신고 동의대기 시간[분] (기본값: 5)
 reportAgreementTime: 5
