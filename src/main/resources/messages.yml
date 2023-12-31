@@ -2,13 +2,13 @@ report_confirm: ["신고를 하기 전에 동의를 해주세요.",
                  "동의하시려면 명령어를 §e한 번더§f 입력해주세요."]
 report_confirm_success: ["--------------------------",
                          "신고가 접수되었습니다.",
-                         "사유 : §e%reason%",
+                         "이유 : §e%reason%",
                          "신고 투표는 §e%reportAgreementTime%분§f동안 진행되며 신고 투표중에 나갈경우 신고가 취소됩니다.",
                          "신고를 취소하시려면 §e'%report-cancel-command%§e'§f를 입력해주세요.",
                          "--------------------------"]
 report_confirm_success_broadcast: ["--------------------------",
                                    "§e'%reporter%'§f님이 §e'%reportee%'§f님을 신고하셨습니다.",
-                                   "신고 사유: §e%reason%",
+                                   "신고 이유: §e%reason%",
                                    "신고 내용이 합당하다고 판단하시면 §e'%report-accept-command%§e'§f를 입력해주세요.",
                                    "--------------------------"]
 report_vote_success_broadcast: "§e'%reporter%'§f님의 신고가 투표자 수를 채워 승인되었습니다."
@@ -36,7 +36,7 @@ report_information_info: ["현재 신고를 진행중인 플레이어: §e%repor
 report_information_info_player_hover: "클릭하여 %reporter%님의 신고 정보를 확인합니다."
 report_information_player: ["--------------------------",
                       "§e'%reporter%'§f님이 §e'%reportee%'§f님을 신고하셨습니다.",
-                      "신고 사유: §e%reason%",
+                      "신고 이유: §e%reason%",
                       "신고 동의자 수: §e%nowAcceptedPlayer%/%maxAcceptedPlayer%명 %acceptButton%",
                       "남은 시간: %time%",
                       "--------------------------"]
@@ -45,11 +45,11 @@ report_information_player_accept_hover: "클릭하여 %reporter%님의 신고를
 report_information_fail_not_reporting: "해당 플레이어는 신고를 진행하고 있지 않습니다."
 
 kick_message: ["§e'%reporter%'§f님의 신고가 승인되어 추방되었습니다.",
-               "사유 : §c%reason%",
+               "이유 : §c%reason%",
                "",
                "자세한 사항은 관리자에게 문의해주세요."]
 ban_message: ["§e'%reporter%'§f님의 신고가 승인되어 밴되었습니다.",
-              "사유 : §c%reason%",
+              "이유 : §c%reason%",
               "",
               "자세한 사항은 관리자에게 문의해주세요."]
 error_wrong_punishment_level: "처벌 레벨이 잘못 설정되었습니다. | 설정된 값: §e%punishmentLevel% | 자세한 사항은 관리자에게 문의해주세요."
@@ -67,7 +67,7 @@ notice_reportee_list_name: "피신고자 목록"
 notice_reportee_lore: ["", "§c전체 %allReports%개 중 %notReadReportCount%개의 신고를 읽지 않았습니다."]
 notice_reportee_report_list_name: "승인된 신고 내역"
 notice_reportee_report_date_format: "yyyy년 MM월 dd일 HH시 mm분 ss초"
-notice_reportee_report_lore: ["§f신고 사유: %reason%", "§f신고 시간: %time%", "", "§c이 신고 내역을 숨기려면 클릭하세요."]
+notice_reportee_report_lore: ["§f신고 이유: %reason%", "§f신고 시간: %time%", "", "§c이 신고 내역을 숨기려면 클릭하세요."]
 notice_reportee_report_hide_success: "신고 내역을 숨겼습니다."
 notice_reportee_no_more_reports: "더 이상 읽을 신고내용이 없습니다."
 notice_reportee_fail_not_found_player: "유저 정보를 잘못 입력했거나 찾을 수 없습니다."
