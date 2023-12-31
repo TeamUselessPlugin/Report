@@ -15,5 +15,5 @@ maxReportCount: 5
 # 2: 밴
 punishmentLevel: 1
 
-# 신고가 승인되기 위한 최소 동의 시간[분] (기본값: 5)
+# 신고가 승인되기 위해 필요한 신고 동의대기 시간[분] (기본값: 5)
 reportAgreementTime: 5
