@@ -44,11 +44,13 @@ report_information_player_accept_button: "§c[동의]"
 report_information_player_accept_hover: "클릭하여 %reporter%님의 신고를 승인합니다."
 report_information_fail_not_reporting: "해당 플레이어는 신고를 진행하고 있지 않습니다."
 
-kick_message: ["§e'%reporter%'§f님의 신고가 승인되어 킥되었습니다.\n",
-               "사유 : §c%reason%\n",
+kick_message: ["§e'%reporter%'§f님의 신고가 승인되어 추방되었습니다.",
+               "사유 : §c%reason%",
+               "",
                "자세한 사항은 관리자에게 문의해주세요."]
-ban_message: ["§e'%reporter%'§f님의 신고가 승인되어 밴되었습니다.\n",
-              "사유 : §c%reason%\n",
+ban_message: ["§e'%reporter%'§f님의 신고가 승인되어 밴되었습니다.",
+              "사유 : §c%reason%",
+              "",
               "자세한 사항은 관리자에게 문의해주세요."]
 error_wrong_punishment_level: "처벌 레벨이 잘못 설정되었습니다. | 설정된 값: §e%punishmentLevel% | 자세한 사항은 관리자에게 문의해주세요."
 
