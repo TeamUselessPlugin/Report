@@ -3,6 +3,7 @@ version: $version
 main: $main
 api-version: $targetAPI
 authors: [ Team-UselessPlugin ]
+softdepend: [ PunishmentHelper ]
 website: https://github.com/Team-UselessPlugin/Report
 libraries:
   - org.jetbrains.kotlin:kotlin-stdlib:1.9.22

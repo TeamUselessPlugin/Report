@@ -68,6 +68,7 @@ notice_reportee_lore: ["", "§c전체 %allReports%개 중 %notReadReportCount%�
 notice_reportee_report_list_name: "승인된 신고 내역"
 notice_reportee_report_date_format: "yyyy년 MM월 dd일 HH시 mm분 ss초"
 notice_reportee_report_lore: ["§f신고 이유: %reason%", "§f신고 시간: %time%", "", "§c이 신고 내역을 숨기려면 클릭하세요."]
+notice_reportee_report_lore_with_punishmenthelper: ["§f신고 이유: %reason%", "§f신고 시간: %time%", "", "§c처벌GUI를 열려면 좌클릭하세요.", "§c이 신고 내역을 숨기려면 우클릭하세요."]
 notice_reportee_report_hide_success: "신고 내역을 숨겼습니다."
 notice_reportee_no_more_reports: "더 이상 읽을 신고내용이 없습니다."
 notice_reportee_fail_not_found_player: "유저 정보를 잘못 입력했거나 찾을 수 없습니다."

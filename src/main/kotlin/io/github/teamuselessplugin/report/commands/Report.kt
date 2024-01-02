@@ -512,23 +512,46 @@ class Report : Listener {
                                                 displayName(Component.text("§fID: $id"))
 
                                                 val nLore = mutableListOf<Component>().apply {
-                                                    msg.getStringList("notice_reportee_report_lore").forEach {
-                                                        add(Component.text(it
-                                                            .replace("%reporter%", Bukkit.getOfflinePlayer(UUID.fromString(reports.getString("reports.${player.uniqueId}.data.${id}.reporter"))).name ?: "null")
-                                                            .replace("%reason%", reports.getString("reports.${player.uniqueId}.data.${id}.reason") ?: "${msg.getString("NonReason")}")
-                                                            .replace("%time%", timeFormat.format(timestamp))
-                                                        ))
+                                                    if (Bukkit.getPluginManager().getPlugin("PunishmentHelper") != null) {
+                                                        msg.getStringList("notice_reportee_report_lore_with_punishmenthelper").forEach {
+                                                            add(Component.text(it
+                                                                .replace("%reporter%", Bukkit.getOfflinePlayer(UUID.fromString(reports.getString("reports.${player.uniqueId}.data.${id}.reporter"))).name ?: "null")
+                                                                .replace("%reason%", reports.getString("reports.${player.uniqueId}.data.${id}.reason") ?: "${msg.getString("NonReason")}")
+                                                                .replace("%time%", timeFormat.format(timestamp))
+                                                            ))
+                                                        }
+                                                    } else {
+                                                        msg.getStringList("notice_reportee_report_lore").forEach {
+                                                            add(Component.text(it
+                                                                .replace("%reporter%", Bukkit.getOfflinePlayer(UUID.fromString(reports.getString("reports.${player.uniqueId}.data.${id}.reporter"))).name ?: "null")
+                                                                .replace("%reason%", reports.getString("reports.${player.uniqueId}.data.${id}.reason") ?: "${msg.getString("NonReason")}")
+                                                                .replace("%time%", timeFormat.format(timestamp))
+                                                            ))
+                                                        }
                                                     }
                                                 }
                                                 lore(nLore)
                                             }
                                         }
                                         onClick {
-                                            cfg.get("reports.yml").set("reports.${player.uniqueId}.data.${it.currentItem?.displayName?.replace("§fID: ", "")}.checked.${sender.uniqueId}", true)
-                                                .also { cfg.save("reports.yml", false) }
-                                            sender.playSound(sender.location, "minecraft:block.note_block.pling", 1f, 1f)
-                                            sendMessageWithPrefix(sender, "${msg.getString("notice_reportee_report_hide_success")}")
-                                            sender.performCommand("report-check ${player.uniqueId}")
+                                            // PunishmentHelper 플러그인이 존재할 경우
+                                            if (Bukkit.getPluginManager().getPlugin("PunishmentHelper") != null) {
+                                                if (it.isLeftClick) {
+                                                    sender.performCommand("punishment ${player.name}")
+                                                } else if (it.isRightClick) {
+                                                    cfg.get("reports.yml").set("reports.${player.uniqueId}.data.${it.currentItem?.displayName?.replace("§fID: ", "")}.checked.${sender.uniqueId}", true)
+                                                        .also { cfg.save("reports.yml", false) }
+                                                    sender.playSound(sender.location, "minecraft:block.note_block.pling", 1f, 1f)
+                                                    sendMessageWithPrefix(sender, "${msg.getString("notice_reportee_report_hide_success")}")
+                                                    sender.performCommand("report-check ${player.uniqueId}")
+                                                }
+                                            } else {
+                                                cfg.get("reports.yml").set("reports.${player.uniqueId}.data.${it.currentItem?.displayName?.replace("§fID: ", "")}.checked.${sender.uniqueId}", true)
+                                                    .also { cfg.save("reports.yml", false) }
+                                                sender.playSound(sender.location, "minecraft:block.note_block.pling", 1f, 1f)
+                                                sendMessageWithPrefix(sender, "${msg.getString("notice_reportee_report_hide_success")}")
+                                                sender.performCommand("report-check ${player.uniqueId}")
+                                            }
                                         }
                                     }
 
