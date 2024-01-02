@@ -21,6 +21,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.SkullMeta
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.*
@@ -454,6 +455,7 @@ class Report : Listener {
                                 slot(x, y) {
                                     item = ItemStack(Material.PLAYER_HEAD).apply {
                                         itemMeta = itemMeta?.apply {
+                                            (this as SkullMeta).owningPlayer = Bukkit.getOfflinePlayer(UUID.fromString(uuid))
                                             displayName(Component.text("§f${Bukkit.getOfflinePlayer(UUID.fromString(uuid)).name}"))
                                             val nLore = mutableListOf<Component>().apply {
                                                 msg.getStringList("notice_reportee_lore").forEach {
